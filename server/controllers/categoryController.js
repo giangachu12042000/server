@@ -17,7 +17,7 @@ module.exports.newCategory = async(req, res)=>
     return res.send({
         code:1,
         status:"successful",
-        data:category
+        category:category
     }).status(200)
 }
 
@@ -32,7 +32,7 @@ module.exports.fetchAll = async(req, res) =>
     return res.send({
         code:1,
         status:"successfull",
-        data:categories
+        categories:categories
     }).status(200)
 }
 
@@ -50,7 +50,7 @@ module.exports.updateCategory = async(req, res) =>
         return res.send({
             code:1,
             status:"successfull",
-            data:result
+            catgory:result
         }).status(200)
     })
     .catch(err=>{
