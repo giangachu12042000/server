@@ -29,7 +29,7 @@ module.exports.fetchAll = (req, res) =>
     const searchCate = {};
     
     if(params.search) {
-        searchCate.$or = [{name:{$regex: `.*${params.search}*`, $options:'ig'}}]
+        searchCate.$or = [{name:{$regex: `${params.search}`, $options:'ig'}}]
     }
     const query = {
         ...searchCate
@@ -41,7 +41,7 @@ module.exports.fetchAll = (req, res) =>
 
     CategoryModel.getPagination(query, requestParams)
     .then(result => {
-        console.log(result,'===========>result','==>query',query)
+        console.log(result,'==e>')
         return res.send({
             code: 1,
             status: "successfull",
