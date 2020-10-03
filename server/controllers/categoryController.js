@@ -4,7 +4,7 @@ const CategoryModel = require('../models/categoryModel');
 module.exports.newCategory = async(req, res)=>
 {
     const data = req.body;
-    if(data.name == '' || data.name.length < 2 || data.name.length > 40){
+    if(data.name == '' || data.name.length < 1 || data.name.length > 40) {
         return res.send({
             code:0,
             status:"faild",
@@ -21,19 +21,34 @@ module.exports.newCategory = async(req, res)=>
     }).status(200)
 }
 
-module.exports.fetchAll = async(req, res) =>
+module.exports.fetchAll = (req, res) =>
 {
     const params = req.query;
     const page = Number(params.page) > 0 ? Number(params.page) : 1;
-    const size = Number(params.size) > 0 ? Number(params.size) : 1;
-    const categories = await CategoryModel.find()
-    .skip(page*size - size)
-    .limit(size);
-    return res.send({
-        code:1,
-        status:"successfull",
-        categories:categories
-    }).status(200)
+    const size = Number(params.size) > 0 ? Number(params.size) : 15;
+    const searchCate = {};
+    
+    if(params.search) {
+        searchCate.$or = [{name:{$regex: `.*${params.search}*`, $options:'ig'}}]
+    }
+    const query = {
+        ...searchCate
+    }
+    const requestParams = {
+        page,
+        size
+    }
+
+    CategoryModel.getPagination(query, requestParams)
+    .then(result => {
+        console.log(result,'===========>result','==>query',query)
+        return res.send({
+            code: 1,
+            status: "successfull",
+            categories: result.categories,
+            pagination: result.pagination,
+        }).status(200)
+    })
 }
 
 module.exports.updateCategory = async(req, res) =>
@@ -43,28 +58,27 @@ module.exports.updateCategory = async(req, res) =>
     return validDataUpdate(id, data)
     .then(categoryInsert=>{
         console.log(categoryInsert,'==>?')
-       return CategoryModel.updateOne({_id:ObjectId(id)}, {$set: categoryInsert});
+       return CategoryModel.updateOne({_id: ObjectId(id)}, {$set: categoryInsert});
     })
     .then(result=>{
         console.log(result)
         return res.send({
-            code:1,
-            status:"successfull",
-            catgory:result
+            code: 1,
+            status: "successfull",
+            catgory: result
         }).status(200)
     })
     .catch(err=>{
         return res.send({
-            code:0,
-            status:"err",
-            data:err
+            code: 0,
+            status: "err",
+            data: err
         }).status(500)
     })
 }
 
 module.exports.deleteCategory = async(req,res)=> {
     const id = req.query.id;
-    console.log(ObjectId(id),'===>')
     if(ObjectId.isValid(id)){
         CategoryModel.deleteOne({_id:ObjectId(id)},(err,result)=>{
             console.log(result,'==>result')
@@ -79,7 +93,7 @@ module.exports.deleteCategory = async(req,res)=> {
             return res.send({
                 code:1,
                 status:"successfull",
-                data:result
+                category:result
             }).status(200)
         })
     }
@@ -94,7 +108,6 @@ function validDataInsert(data)
     const name = data.name;
     const desc =  data.description;
     category.name = name ? name.toString() : null;
-    category.description = desc ? desc.toString() : '';
     return category
 }
 
@@ -114,9 +127,6 @@ function validDataUpdate(id, data)
         };
         if(data.name !==undefined){
             category.name =  data.name;
-        }
-        if(data.description !==undefined){
-            category.description =  data.description;
         }
         resolve(category)
     })
