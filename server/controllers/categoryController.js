@@ -25,11 +25,11 @@ module.exports.fetchAll = (req, res) =>
 {
     const params = req.query;
     const page = Number(params.page) > 0 ? Number(params.page) : 1;
-    const size = Number(params.size) > 0 ? Number(params.size) : 15;
+    const size = Number(params.size) > 0 ? Number(params.size) : 10;
     const searchCate = {};
     
     if(params.search) {
-        searchCate.$or = [{name:{$regex: `${params.search}`, $options:'ig'}}]
+        searchCate.$or = [{name:{$regex: `.*${params.search}*`, $options:'ig'}}]
     }
     const query = {
         ...searchCate
@@ -39,9 +39,9 @@ module.exports.fetchAll = (req, res) =>
         size
     }
 
+
     CategoryModel.getPagination(query, requestParams)
     .then(result => {
-        console.log(result,'==e>')
         return res.send({
             code: 1,
             status: "successfull",
@@ -53,8 +53,8 @@ module.exports.fetchAll = (req, res) =>
 
 module.exports.updateCategory = async(req, res) =>
 {
-    const data = req.body;
-    const id = req.query.id;
+    const {data} = req.body;
+    const {id} = req.params;
     return validDataUpdate(id, data)
     .then(categoryInsert=>{
         console.log(categoryInsert,'==>?')
@@ -113,8 +113,7 @@ function validDataInsert(data)
 
 function validDataUpdate(id, data)
 {
-    return new Promise((resolve, reject) => 
-    {
+    return new Promise((resolve, reject) => {
         if (!ObjectId.isValid(id)) {
             reject('Invalid identifier');
         }
@@ -125,9 +124,9 @@ function validDataUpdate(id, data)
         const category = {
             date_updated: new Date()
         };
-        if(data.name !==undefined){
+        if(data.name){
             category.name =  data.name;
         }
-        resolve(category)
+        return resolve(category)
     })
 }
