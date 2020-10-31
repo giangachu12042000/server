@@ -27,15 +27,28 @@ module.exports.fetchAll = async(req, res) =>
 {
     const params = req.query;
     const page = Number(params.page) > 0 ? Number(params.page) : 1;
-    const size = Number(params.size) > 0 ? Number(params.size) : 1;
-    const categories = await ProductModel.find()
-    .skip(page*size - size)
-    .limit(size);
-    return res.send({
-        code:1,
-        status:"successfull",
-        data:categories
-    }).status(200)
+    const size = Number(params.size) > 0 ? Number(params.size) : 15;
+    const searchProduct = {};
+
+    if(params.search){
+        searchProduct.$or = [{name: {$regex: `.*${params.search}*`, $options: 'ig'}}]
+    }
+    const rquestParmas = {
+        page,
+        size
+    }
+    const query = {
+        ...searchProduct
+    }
+    ProductModel.getpagination(query, rquestParmas)
+    .then(result => {
+        return res.send({
+            code: 1,
+            status: "successfull",
+            products: result.products,
+            pagination: result.pagination,
+        }).status(200)
+    })
 }
 
 
@@ -44,29 +57,21 @@ module.exports.findByCateId = async(req, res) =>
     const cateId = req.query.id;
     if(ObjectId.isValid(cateId)){
        const category = await CategoryModel.findById(cateId)
-        // .then(category => {
-        //     console.log(category,'====>?cate')
-        //     res.send({ code: 0, message: 'sucess', data: category });
-        // })
-        // .catch(error => {
-        //     console.log(error,'====>?error')
-        //     res.send({ code: 0, message: 'failed' })
-        // });
-        // console.log('====>1')
         return res.send({ code: 0, message: 'sucess', data: category });
     }
 }
 
 module.exports.updateProduct = async(req, res) =>
 {
-    const data = req.body;
-    const id = req.query.id;
+    const {data} = req.body;
+    const {id} = req.params;
     return validDataUpdate(id, data)
     .then(productInsert=>{
+        
        return ProductModel.updateOne({_id:ObjectId(id)}, {$set: productInsert});
     })
     .then(result=>{
-        console.log(result)
+        console.log(result,'===>')
         return res.send({
             code:1,
             status:"successfull",
@@ -129,6 +134,7 @@ function validDataUpdate(id, data)
 {
     return new Promise((resolve, reject) => 
     {
+        console.log(!ObjectId.isValid(id),'=======>edit')
         if (!ObjectId.isValid(id)) {
             reject('Invalid identifier');
         }

@@ -17,8 +17,8 @@ module.exports.newUser = async(req,res)=>
     const object = _.omit(data,'password');
     const newUser = new UserModel({...object, password:hashPass});
     let user = await newUser.save();
-    console.log(user,'==>user')
     const doc = _.omit(_.get(user, "_doc"), ["password"]);
+    console.log(doc,'==>user')
     return res.send({
         code:1,
         status:"successful",
@@ -31,27 +31,36 @@ module.exports.fetchAll = async(req, res) =>
     const params = req.query;
     const page = Number(params.page) > 0 ? Number(params.page) : 1;
     const size = Number(params.size) > 0 ? Number(params.size) : 1;
-    const users = await UserModel.find()
-    // cần cắt bỏ đoạn password đi
-    .skip(page*size - size)
-    .limit(size);
-    return res.send({
-        code:1,
-        status:"successfull",
-        data:users
-    }).status(200)
+    const searchCate = {};
+    if(params.search) {
+        searchCate.$or = [{name:{$regex: `.*${params.search}*`, $options:'ig'}}]
+    }
+    const query = {
+        ...searchCate
+    }
+    const requestParams = {
+        page,
+        size
+    }
+    UserModel.getPagination(query, requestParams)
+    .then(result => {
+        return res.send({
+            code: 1,
+            status: "successfull",
+            users: result.users || [],
+            pagination: result.pagination,
+        }).status(200)
+    })
 }
 
 module.exports.updateUser = async(req, res) =>
 {
     const data = req.body;
-    const id = req.query.id;
+    const id = req.params.id;
     console.log(id)
     return validDataUpdate(id, data)
-    .then(categoryInsert=>{
-        console.log(categoryInsert,'==')
-
-       return UserModel.updateOne({_id:ObjectId(id)}, {$set: categoryInsert});
+    .then(userInsert=>{
+       return UserModel.updateOne({_id:ObjectId(id)}, {$set: userInsert});
     })
     .then(result=>{
         console.log(result)
@@ -72,7 +81,7 @@ module.exports.updateUser = async(req, res) =>
 
 module.exports.deleteUser = async(req,res)=> {
     try{
-        const id = req.query.id;
+        const id = req.params.id;
         if(ObjectId.isValid(id)){
             UserModel.deleteOne({_id:ObjectId(id)},(err,result)=>{
                 if(err){
@@ -123,6 +132,7 @@ function validDataUpdate(id, data)
 {
     return new Promise((resolve, reject) =>
     {
+        console.log(!ObjectId.isValid(id),'=====>!ObjectId.isValid(id)',id)
         if (!ObjectId.isValid(id)) {
             reject('Invalid identifier');
         }
@@ -135,13 +145,9 @@ function validDataUpdate(id, data)
         if(data.name !==undefined){
             user.name =  data.name;
         }
-        if(data.password !==undefined){
-            user.description =  data.password;
-        }
         if(data.email !==undefined){
             user.email =  data.email;
         }
-        console.log(user)
         resolve(user)
     })
 }

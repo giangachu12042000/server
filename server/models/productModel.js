@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const Category = new Schema({
+const Product = new Schema({
     name : {type: String, unique: true, required: true},
     price : {type: Number, require: true},
     quantity : {type: Number, require: true},
@@ -12,4 +12,23 @@ const Category = new Schema({
     cate_id : {type: Schema.Types.ObjectId, ref: "categories"}
 })
 
-module.exports = mongoose.model('products', Category);
+Product.statics.getpagination = function(query, requestParams){
+    const {page, size} = requestParams
+    return this.find(query)
+    .skip(page * size - size)
+    .limit(size)
+    .then(products=> {
+        return this.countDocuments()
+         .then(count=> ({
+                products: products,
+                pagination: {
+                    size,
+                    page,
+                    total: count
+                }
+             })
+         )
+     });
+}
+
+module.exports = mongoose.model('products', Product);

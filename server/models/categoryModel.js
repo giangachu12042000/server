@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const Category = new Schema({
     name:{type: String, unique: true },
     date_created:{type: Date,default: Date.now},
-    date_updated:{type: Date,default: Date.now}
+    date_updated:{type: Date,default: Date.now},
 })
 
 Category.statics.getPagination = function(query, requestParam){

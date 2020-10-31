@@ -8,4 +8,4 @@ const Cart = new Schema({
     total_price: { type: Number }
 })
 
-module.exports = mongoose.model("carts",Cart)
+module.exports = mongoose.model("carts", Cart);
