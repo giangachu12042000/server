@@ -3,7 +3,7 @@ const chalk = require('chalk');
 
 const connectM = async ()=> {
     try{
-        await mongoose.connect('mongodb://localhost/M10SHOP', {
+        await mongoose.connect('mongodb://localhost/Gardent', {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             useFindAndModify: false,

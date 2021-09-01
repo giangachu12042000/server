@@ -53,11 +53,11 @@ module.exports.fetchAll = (req, res) =>
 
 module.exports.updateCategory = async(req, res) =>
 {
-    const {data} = req.body;
-    const {id} = req.params;
+    const data = req.body;
+    const {id} = req.query;
+
     return validDataUpdate(id, data)
     .then(categoryInsert=>{
-        console.log(categoryInsert,'==>?')
        return CategoryModel.updateOne({_id: ObjectId(id)}, {$set: categoryInsert});
     })
     .then(result=>{

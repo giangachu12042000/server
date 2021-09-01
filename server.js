@@ -1,18 +1,22 @@
 const express = require('express');
 const app = express();
-const bodyParser = require('body-parser');
+var bodyParser = require('body-parser');
 const db = require('./db.js');
 const cors = require('cors');
 const _ = require('lodash');
-const Bcrypt = require('bcryptjs');
-const dotenv = require('dotenv') ; 
-const path = require('path');
+// const Bcrypt = require('bcryptjs');
+require('dotenv/config') ; 
+// const path = require('path');
+const fileUpload  = require('express-fileupload');
+
 const api = require('./server/api');
 
-dotenv.config();
+const PORT = process.env.PORT || 4000;
+// dotenv.config();
 
 db.ready.then(()=>{
     app.use(bodyParser.json({ limit: "50mb", extended: true })); 
+
     if (process.env.NODE_ENV !== "production"){
         app.use(
             cors({
@@ -25,12 +29,14 @@ db.ready.then(()=>{
         bodyParser.urlencoded({
             limit: "50mb",
             extended: true,
-            parameterLimit: 100000
+            parameterLimit: 10000
         })
     );
+    // app.use(fileUpload());
+
     app.use('/api',api);
 })
 
-app.listen(4000, err => {
-    console.log('listening...')
+app.listen(PORT, err => {
+    console.log('port_',PORT)
 })

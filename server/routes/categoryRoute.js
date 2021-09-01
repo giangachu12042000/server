@@ -4,7 +4,7 @@ function connectCategory(router)
 {
     router.post('/category/create', category.newCategory);
     router.get('/category/fetch-all', category.fetchAll);
-    router.put('/category/edit/:id', category.updateCategory);
+    router.put('/category/edit', category.updateCategory);
     router.delete('/category/delete', category.deleteCategory)
 }
 

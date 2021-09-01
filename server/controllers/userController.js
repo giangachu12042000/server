@@ -132,7 +132,6 @@ function validDataUpdate(id, data)
 {
     return new Promise((resolve, reject) =>
     {
-        console.log(!ObjectId.isValid(id),'=====>!ObjectId.isValid(id)',id)
         if (!ObjectId.isValid(id)) {
             reject('Invalid identifier');
         }

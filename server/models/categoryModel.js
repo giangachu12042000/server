@@ -20,7 +20,6 @@ Category.statics.getPagination = function(query, requestParam){
         .then(count=> ({
                 categories: categories,
                 pagination: {
-                    size,
                     page,
                     total: count
                 }
@@ -29,4 +28,4 @@ Category.statics.getPagination = function(query, requestParam){
     });
 }
 
-module.exports = mongoose.model('categories', Category);
+module.exports = mongoose.model('category', Category);

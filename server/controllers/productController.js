@@ -1,19 +1,14 @@
 const ObjectId = require('mongodb').ObjectId;
+const { validateMIMEType } = require('validate-image-type');
+
 const ProductModel = require('../models/productModel');
 const CategoryModel = require('../models/categoryModel');
 const { pick } = require('lodash');
 
 module.exports.newProduct = async(req, res)=>
 {
-    const data = req.body;
-    if(data.name == '' || data.name.length < 2 || data.name.length > 40){
-        return res.send({
-            code:0,
-            status:"faild",
-            mesage:'không được để trống tên và tên nhỏ hơn 60 ký tự'
-        }).status(200)
-    }
-    const datadidValid = await validDataInsert(data);
+
+    const datadidValid = await validDataInsert(req);
     const newProduct = new ProductModel({...datadidValid});
     let product = await newProduct.save();
     return res.send({
@@ -63,9 +58,8 @@ module.exports.findByCateId = async(req, res) =>
 
 module.exports.updateProduct = async(req, res) =>
 {
-    const {data} = req.body;
-    const {id} = req.params;
-    return validDataUpdate(id, data)
+    const {id} = req.query;
+    return validDataUpdate(id, req)
     .then(productInsert=>{
         
        return ProductModel.updateOne({_id:ObjectId(id)}, {$set: productInsert});
@@ -87,10 +81,12 @@ module.exports.updateProduct = async(req, res) =>
     })
 }
 
+
 module.exports.deleteProduct = async(req,res)=> {
     const id = req.query.id;
     if(ObjectId.isValid(id)){
         ProductModel.deleteOne({_id:ObjectId(id)},(err,result)=>{
+            console.log('==>', result)
             if(err){
                 return res.send({
                     code:0,
@@ -107,57 +103,66 @@ module.exports.deleteProduct = async(req,res)=> {
     }
 }
 
-function validDataInsert(data)
+function validDataInsert(req)
 {
     const product = {
         date_created: new Date(),
         date_updated: new Date(),
     }
-    const name = data.name;
-    const desc =  data.description;
-    const price = data.price;
-    const quantity = data.quantity;
-    const image = data.image;
-    const cate_id = data.cate_id;
-
+    const name = req.body.name;
+    product.cate_id = req.body.cate_id;
     product.name = name ? name.toString() : null;
-    product.description = desc ? desc.toString() : null;
-    product.price = Number(price) > 0 ? Number(price) : 1;
-    product.quantity = Number(quantity) > 0 ? Number(quantity) : 1;
-    product.image = image ? image.toString() : null
-    product.cate_id = cate_id ? cate_id.toString() : 'null';
 
+    if (req.file) {
+        const validationResult = validateMIMEType(req.file?.path, {
+          originalFilename: req.file?.originalname,
+          allowMimeTypes: ['image/jpeg', 'image/gif', 'image/png', 'image/jpg'],
+        });
+    
+        if (!validationResult.ok) {
+          return {
+            code: 300,
+            message: 'không đúng đinh dạng ảnh: image/jpeg, image/png , image/gif,image/jpg',
+          };
+        }
+        product.image = req.file?.path;
+    }
     return product
 }
 
-function validDataUpdate(id, data)
+function validDataUpdate(id, req)
 {
     return new Promise((resolve, reject) => 
     {
-        console.log(!ObjectId.isValid(id),'=======>edit')
         if (!ObjectId.isValid(id)) {
-            reject('Invalid identifier');
+            reject('Định danh không hợp lệ!');
         }
-        if (Object.keys(data).length === 0) {
-            reject('Required fields are missing');
+        if (Object.keys(req.body.name).length === 0) {
+            reject('Vui lòng nhập nhập lại dữ liệu!');
         }
         const product = {
             date_updated: new Date()
         };
-        if(data.name !==undefined){
-            product.name =  data.name;
+        if(req.body.name !==undefined){
+            product.name =  req.body.name;
         }
-        if(Number(data.price) > 0){
-            product.price = Number(data.price)
+
+        if (req.file) {
+            const validationResult = validateMIMEType(req.file?.path, {
+              originalFilename: req.file?.originalname,
+              allowMimeTypes: ['image/jpeg', 'image/gif', 'image/png', 'image/jpg'],
+            });
+            if (!validationResult.ok) {
+              return {
+                code: 300,
+                message: 'không đúng đinh dạng ảnh: image/jpeg, image/png , image/gif,image/jpg',
+              };
+            }
+            product.image = req.file?.path;
         }
-        if(Number(data.quantity) > 0){
-            product.quantity = Number(data.quantity)
-        }
-        if(data.cate_id){
-            product.cate_id = data.cate_id.toString()
-        }
-        if(data.description !==undefined){
-            product.description =  data.description;
+     
+        if(req.body.cate_id){
+            product.cate_id = req.body.cate_id.toString()
         }
         resolve(product)
     })
